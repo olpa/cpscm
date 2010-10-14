@@ -529,6 +529,23 @@ var cpscmnot = cpscm__cpswrap (
   function not (x) { return x === false; }
 );
 
+var cpscmmake_d_string = cpscm__cpswrap (
+  function make_string(n, c) {
+    if (c === undefined) {
+      s = " ";
+    } else {
+      s = String.fromCharCode(c.code);
+    }
+    while (s.length < n) {
+      s = s + s;
+    }
+    if (s.length == n) {
+      return s;
+    }
+    return s.substring(0, n);
+  }, true
+);
+
 var cpscmstring_e__p_ = cpscm__cpswrap (
   function string_eq(s1, s2) { return s1 === s2; }
 );
