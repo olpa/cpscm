@@ -1,0 +1,26 @@
+JavaScript, how to add new functions
+
+Skeleton:
+
+::: var cpscmxxx = cpscm__cpswrap (
+:::   function xxx(...) {
+:::   }
+::: );
+
+The name of function "xxx" repeated twice, with different mangling. If the Scheme function has optional arguments, the function "cpscm__cpswrap" accepts additional "true" parameter.
+
+On example of "make-string":
+
+var cpscmmake_d_string = cpscm__cpswrap (
+  function make_string(n, c) {
+    if (c === undefined) {
+      s = " ";
+    }
+    ...
+  }, true
+);
+
+"make-string" mangling 1: cpscmmake_d_string
+"make-string" mangling 2: make_string
+Optional argument
+JavaScript function checks for the optional argument
