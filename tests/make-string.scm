@@ -14,3 +14,6 @@
 (display (make-string 5 #\q)); "qqqqq"
 (display "]\n")
 
+(display "[")
+(display (make-string 8 #\e)); "eeeeeeee"
+(display "]\n")
