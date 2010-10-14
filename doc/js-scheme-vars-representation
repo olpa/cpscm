@@ -1,0 +1,8 @@
+JavaScript, scheme variables
+
+Scheme strings: JavaScript strings
+
+Scheme characters: JavaScript objects with a field code:
+Scheme:     #\r 
+JavaScript: ({code:114})
+access in JS: c.code
