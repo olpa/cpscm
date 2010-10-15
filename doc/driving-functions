@@ -1,0 +1,199 @@
+Driving functions (CPS implementation)
+
+The source program:
+
+-----
+(define factorial
+  (lambda (n value)
+    (if (= 0 n)
+       value
+       (factorial (- n 1) (* n value)))))
+
+(display (factorial 10 1))
+(display "\n")
+-----
+
+Compiled with SCM backend:
+
+-----
+(define cpscmfactorial
+  (lambda (gk1 cpscm_n_41 cpscm_value_42)
+    (cpscm__trampoline
+      (cpscm=
+        (lambda (gret=_2)
+          (cpscm__trampoline
+            (cpscm_20_boolean-combinator
+              gk1
+              gret=_2
+              (lambda (gk5)
+                (cpscm__trampoline (gk5 cpscm_value_42)))
+              (lambda (gk7)
+                (cpscm__trampoline
+                  (cpscm-
+                    (lambda (gret-_8)
+                      (cpscm__trampoline
+                        (cpscm*
+                          (lambda (gret*_9)
+                            (cpscm__trampoline
+                              (cpscmfactorial gk7 gret-_8 gret*_9)))
+                          cpscm_n_41
+                          cpscm_value_42)))
+                    cpscm_n_41
+                    1))))))
+        0
+        cpscm_n_41))))
+
+(cpscm__drive
+  ((lambda (gk12)
+     (cpscm__trampoline
+       (cpscmfactorial
+         (lambda (gretfactorial_13)
+           (cpscm__trampoline
+             (cpscmdisplay gk12 gretfactorial_13)))
+         10
+         1)))
+   (lambda (cpscmx) cpscmx)))
+
+(cpscm__drive
+  ((lambda (gk16)
+     (cpscm__trampoline (cpscmdisplay gk16 "\n")))
+   (lambda (cpscmx) cpscmx)))
+-----
+
+Compiled with JavaScript backend:
+
+-----
+
+var cpscmfactorial = function (__args) {
+var g__k1=__args.car; __args=__args.cdr;
+var cpscm_u_n__41=__args.car; __args=__args.cdr;
+var cpscm_u_value__42=__args.car; __args=__args.cdr;
+return new cpscm__Trampoline (function () {
+return (cpscm_e_) (cpscm__list (function (__args) {
+var g__ret_e___2=__args.car; __args=__args.cdr;
+return new cpscm__Trampoline (function () {
+return (cpscm_x_boolean_d_combinator) (cpscm__list (g__k1, g__ret_e___2, function (__args) {
+var g__k5=__args.car; __args=__args.cdr;
+return new cpscm__Trampoline (function () {
+return (g__k5) (cpscm__list (cpscm_u_value__42, cpscm__nil)); });
+}
+, function (__args) {
+var g__k7=__args.car; __args=__args.cdr;
+return new cpscm__Trampoline (function () {
+return (cpscm_d_) (cpscm__list (function (__args) {
+var g__ret_d___8=__args.car; __args=__args.cdr;
+return new cpscm__Trampoline (function () {
+return (cpscm_2a_) (cpscm__list (function (__args) {
+var g__ret_2a___9=__args.car; __args=__args.cdr;
+return new cpscm__Trampoline (function () {
+return (cpscmfactorial) (cpscm__list (g__k7, g__ret_d___8, g__ret_2a___9, cpscm__nil)); });
+}
+, cpscm_u_n__41, cpscm_u_value__42, cpscm__nil)); });
+}
+, cpscm_u_n__41, 1, cpscm__nil)); });
+}
+, cpscm__nil)); });
+}
+, 0, cpscm_u_n__41, cpscm__nil)); });
+}
+;
+
+
+cpscm__drive ((function (__args) {
+var g__k12=__args.car; __args=__args.cdr;
+return new cpscm__Trampoline (function () {
+return (cpscmfactorial) (cpscm__list (function (__args) {
+var g__retfactorial__13=__args.car; __args=__args.cdr;
+return new cpscm__Trampoline (function () {
+return (cpscmdisplay) (cpscm__list (g__k12, g__retfactorial__13, cpscm__nil)); });
+}
+, 10, 1, cpscm__nil)); });
+}
+) (cpscm__list (function (__args) {
+var cpscmx=__args.car; __args=__args.cdr;
+return cpscmx;
+}
+, cpscm__nil)));
+
+
+
+cpscm__drive ((function (__args) {
+var g__k16=__args.car; __args=__args.cdr;
+return new cpscm__Trampoline (function () {
+return (cpscmdisplay) (cpscm__list (g__k16, "\n", cpscm__nil)); });
+}
+) (cpscm__list (function (__args) {
+var cpscmx=__args.car; __args=__args.cdr;
+return cpscmx;
+}
+, cpscm__nil)));
+-----
+
+In the SCM, we see the functions:
+
+cpscm__drive
+cpscm__trampoline
+
+In JS:
+
+cpscm__drive
+cpscm__Trampoline
+
+Let's see the definitions:
+
+SCM: first ~30 lines of "cpscm-drv.scm":
+
+-----
+(define-record-type
+  :cpscm__trampoline
+  (cpscm__trampoline-create thunk)
+  cpscm__trampoline?
+  (text cpscm__trampoline-text cpscm__trampoline-set-text!)
+  (thunk cpscm__trampoline-thunk))
+(define-record-type
+  :cpscm__delay
+  (cpscm__delay-create thunk)
+  cpscm__delay?
+  (thunk cpscm__delay-thunk))
+(define-syntax
+  cpscm__trampoline
+  (syntax-rules
+    ()
+    ((_ . rest)
+     (let ((tr (cpscm__trampoline-create (lambda () . rest))))
+       (cpscm__trampoline-set-text! tr 'rest)
+       tr))))
+(define (cpscm__drive sexp)
+  (cpscm__reduce-trampoline (cpscm__trampoline sexp)))
+(define (cpscm__reduce-trampoline sexp)
+  (let loop ((cc sexp))
+    (if (cpscm__trampoline? cc) (loop ((cpscm__trampoline-thunk cc))) cc)))
+(define (cpscm_20_boolean-combinator k test then else)
+  (if test (then k) (else k)))
+-----
+
+JS:
+
+-----
+
+function cpscm__reduce_d_trampoline (cc) {
+  while (cc instanceof cpscm__Trampoline) {
+    // print ("Executing " + cc.thunk);
+    cc = (cc.thunk) ();
+  }
+  return cc;
+}
+
+function cpscm__drive (cc, excHnd) {
+  if (excHnd === undefined)
+    excHnd = function js_exc_hnd (e) { throw ("cpscm__drive error: " + e); }
+  try {
+    return cpscm__reduce_d_trampoline (cc);
+  } catch (e) {
+    return excHnd (e);
+  }
+}
+
+function cpscm__Trampoline (thunk)
+{ this.thunk = thunk; }
+-----
