@@ -197,3 +197,47 @@ function cpscm__drive (cc, excHnd) {
 function cpscm__Trampoline (thunk)
 { this.thunk = thunk; }
 -----
+
+===========================================================
+
+Explanation of the CPS style see, for example:
+The 90 minute Scheme to C compiler by Marc Feeley
+
+CPSCM optimizes the code, it sometimes does not pass the continuation
+parameter.
+
+Analysis of "cpscmfactorial" (Scheme version)
+---------------------------------------------
+
+A variable "gkN" is a continuation, or "goto".
+A variable "gretFuncNN" is the result of evaluating the corresponding "func".
+
+For analysis, let's assign labels "xxxx" to the code fragment
+(lambda (xxxx) .... )
+In the example below, I renamed some gret-variables to "a" to
+avoid confusion with the gret-labals.
+
+cpscmfactorial:  a1  :=  (= 0 n)
+                 goto gret=_2
+gret=_2:         (combinator, if a1)
+                     then  var gk5 := gk1
+                           goto label gk5
+                     else  var gk7 := gk1
+                           goto label gk7
+gk5:             goto gk5 (actuall gk1)
+gk7:             a2  :=  (- n 1)
+                 goto gret-_8
+gret-_8:         a3 :=  (* n value)
+                 goto gret*_9
+gret-_9:         (factorial a2 a3)
+
+The names of the variables:
+
+a1  ===  gret=_2
+a2  ===  gret-_8
+a3  ===  gret*_9
+
+
+I still don't understand the need for the function "cpscm_trampoline".
+More precesely, I don't see what it adds to CPSCM.
+I'll try to investigate it in the next file, "cpscm_trampoline".
