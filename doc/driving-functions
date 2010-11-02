@@ -203,41 +203,102 @@ function cpscm__Trampoline (thunk)
 Explanation of the CPS style see, for example:
 The 90 minute Scheme to C compiler by Marc Feeley
 
-CPSCM optimizes the code, it sometimes does not pass the continuation
-parameter.
+For JavaScript, I like this explanation of trampoline functions
+http://stackoverflow.com/questions/189725/what-is-a-trampoline-function
+
 
 Analysis of "cpscmfactorial" (Scheme version)
 ---------------------------------------------
 
-A variable "gkN" is a continuation, or "goto".
-A variable "gretFuncNN" is the result of evaluating the corresponding "func".
+The big s-expression split on smaller ones:
 
-For analysis, let's assign labels "xxxx" to the code fragment
-(lambda (xxxx) .... )
-In the example below, I renamed some gret-variables to "a" to
-avoid confusion with the gret-labals.
+(define cpscmfactorial
+  (lambda (gk1 cpscm_n_41 cpscm_value_42) (cpscm__trampoline
+    (cpscm=
+      LAMBDA_gret=_2
+      0
+      cpscm_n_41))))
 
-cpscmfactorial:  a1  :=  (= 0 n)
-                 goto gret=_2
-gret=_2:         (combinator, if a1)
-                     then  var gk5 := gk1
-                           goto label gk5
-                     else  var gk7 := gk1
-                           goto label gk7
-gk5:             goto gk5 (actuall gk1)
-gk7:             a2  :=  (- n 1)
-                 goto gret-_8
-gret-_8:         a3 :=  (* n value)
-                 goto gret*_9
-gret-_9:         (factorial a2 a3)
+(LAMBDA_gret=_2 (gret=_2) (cpscm__trampoline
+  (cpscm_20_boolean-combinator
+    gk1
+    gret=_2
+    (lambda (gk5)
+      (cpscm__trampoline (gk5 cpscm_value_42)))
+    (lambda (gk7)
+      (cpscm__trampoline
+        (cpscm-
+          LAMBDA_gret-_8
+          cpscm_n_41
+          1))))))
 
-The names of the variables:
+(LAMBDA_gret-_8 (gret-_8) (cpscm__trampoline
+  (cpscm*
+    LAMBDA_gret*_9
+    cpscm_n_41
+    cpscm_value_42)))
 
-a1  ===  gret=_2
-a2  ===  gret-_8
-a3  ===  gret*_9
+(LAMBDA_gret*_9 (gret*_9) (cpscm__trampoline
+  (cpscmfactorial gk7 gret-_8 gret*_9)))
+
+Everything as expected. Each function gets a continuation parameter.
+
+After analysis of cpscm__trampoline and cpscm__drive, I think that
+the author planned something more than he has written.
+
+At the moment, the only need of these functions is to 
+emulate tail recursion as if it was not supported.
 
 
-I still don't understand the need for the function "cpscm_trampoline".
-More precesely, I don't see what it adds to CPSCM.
-I'll try to investigate it in the next file, "cpscm_trampoline".
+Analysis of JavaScript version
+------------------------------
+
+Without exprierence in JavaScript, I might understand code wrong.
+
+The arguments to functions are passed as a linked list. The variable
+associated with this list is called __args. Continuation is
+located in the __args.car, the actual arguments in __args.cdr.
+
+JS syntax: (a)(b)
+I think it is a call of the procedure, stored as a reference in "a",
+with the argument "b".
+
+The Scheme expression
+
+(lalala arg1 arg2)
+
+is converted to
+
+function(__args) {
+  var g_kX = __args.car; __args = __args.cdr;
+  var cpscm_u_arg1_X = __args.car; __args = __args.cdr;
+  var cpscm_u_arg2_X = __args.car; __args = __args.cdr;
+  return new cpscm__Trampoline(
+    function() {
+      return (cpscmlalala)(
+        cpscm_list(g_kX, cpscm_u_arg1_X, cpscm_u_arg2_X))
+    })
+}
+
+Let's call it [CONVERT lalala(g_kX, arg1, arg2)].
+
+The JavaScript factorial can be rewritten now as
+(in the first approximation):
+
+var cpscmfactorial = 
+[CONVERT cpscm_e_(
+  [CONVERT cpscm_x_boolean_d_combinator(
+    g__k1,
+    g__ret_e___2,
+    [CONVERT id(cpscm_u_value__42)],
+    [CONVERT cpscm_d_(
+      [CONVERT cpscm_2a_(
+        [CONVERT cpscmfactorial(g__k7, g__ret_d___8, g__ret_2a___9)],
+        cpscm_u_n__41,
+        cpscm_u_value__42)],
+      cpscm_u_n__41,
+      1)])]
+  0,
+  cpscm_u_n__41)]
+
+Now I can see the structure in the former code mess.
